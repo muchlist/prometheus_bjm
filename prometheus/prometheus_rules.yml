@@ -1,0 +1,82 @@
+
+groups:
+- name: alert_rules
+  rules:
+  - alert: InstanceDown
+    expr: up == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance [{{ $labels.instance }}] down"
+      description: "[{{ $labels.instance }}] dari job [{{ $labels.job }}] telah down lebih dari 2 menit."
+
+  - alert: NodeDisk
+    expr: 100 * node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} <= 10
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance [{{ $labels.instance }}] memiliki lebih sedikit dari 10% ruang penyimpanan"
+      description: "[{{ $labels.instance }}] hanya memiliki lebih sedikit dari {{ $value }}% ruang penyimpanan bebas."
+
+  - alert: NodeMemory
+    expr: 100 - (100 * node_memory_MemFree_bytes / node_memory_MemTotal_bytes) <= 10
+    labels:
+      severity: warning
+    annotations:
+      summary: "Instance [{{ $labels.instance }}] memiliki lebih sedikit dari 10% ruang memory"
+      description: "[{{ $labels.instance }}] hanya memiliki {{ $value }}% memory bebas."
+
+  - alert: WindowsCPU
+    expr: 100 - (avg by (instance) (rate(windows_cpu_time_total{mode="idle"}[2m])) * 100) > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pemakaian CPU Windows Server (instance {{ $labels.instance }}) lebih dari 80%"
+      description: "Pemakaian CPU lebih dari 80%. VALUE = {{ $value }}"
+
+  - alert: WindowsMemory
+    expr: 100 - ((windows_os_physical_memory_free_bytes / windows_cs_physical_memory_bytes) * 100) > 90
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pemakaian RAM Windows Server (instance {{ $labels.instance }})"
+      description: "Pemakaian RAM lebih dari 90%.  VALUE = {{ $value }}"
+
+  - alert: WindowsDisk
+    expr: (100.0 - 100 * ((windows_logical_disk_free_bytes / 1024 / 1024 ) / (windows_logical_disk_size_bytes / 1024 / 1024)) > 90) and ((windows_logical_disk_free_bytes / 1024 / 1024 / 1024)  < 10)
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pemakaian ruang penyimpanan per disk Windows Server (instance {{ $labels.instance }})"
+      description: "Pemakaian disk lebih dari 90% dan kurang dari 10GB.  VALUE = {{ $value }}"
+
+  - alert: RecordingServiceStopped
+    expr: windows_service_status{job="wmi_cctv",name="milestone recording server",status="ok"} == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Recording Service tidak OK (instance {{ $labels.instance }})"
+      description: "Service Milestone Record pada CCTV Server lama tidak OK lebih dari 2 menit"
+
+  - alert: RecordingServiceXprotectStopped
+    expr: windows_service_status{job="wmi_cctv_spiner",name="milestone xprotect recording server",status="ok"} == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Recording Service tidak OK (instance {{ $labels.instance }})"
+      description: "Service Milestone Xprotect Record pada CCTV Spiner tidak OK lebih dari 2 menit"
+
+  - alert: Altai Down
+    expr: ping_loss_percent == 1
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Altai down [{{ $labels.ip }}]"
+      description: "Paket ICMP loss 100% pada altai {{ $labels.ip }}"
